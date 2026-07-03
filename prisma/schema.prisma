@@ -18,7 +18,15 @@ model Tenant {
   domain       String?  @unique
   brandName    String   @default("Maple Furnishers")
   logoUrl      String?
+  bannerUrl    String?
   primaryColor String?
+  addressLine1 String?
+  addressLine2 String?
+  phone        String?
+  email        String?
+  gstin        String?
+  website      String?
+  tagline      String?
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -91,4 +99,42 @@ model AppSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+// Stored images: brand assets (logo, banner) and the product photo gallery.
+// Bytes live in Postgres for now; move to object storage if volume demands.
+model Asset {
+  id        String    @id @default(cuid())
+  tenantId  String?
+  kind      String // logo | banner | product
+  name      String
+  mime      String
+  data      Bytes
+  createdAt DateTime  @default(now())
+  products  Product[]
+}
+
+// The product library: every AI-imported or manually saved item, addressable
+// by a stable code (MF-P-0001) and reusable across quotes.
+model Product {
+  id            String   @id @default(cuid())
+  tenantId      String?
+  code          String   @unique
+  name          String
+  category      String?
+  specification String?
+  material      String?
+  unitType      String   @default("nos")
+  defaultRate   Float?
+  imageAssetId  String?
+  image         Asset?   @relation(fields: [imageAssetId], references: [id])
+  source        String   @default("manual") // manual | ai-import
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Monotonic counters (product codes etc.)
+model Counter {
+  key   String @id
+  value Int    @default(0)
 }
