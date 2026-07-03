@@ -47,7 +47,9 @@ export function SuiteShell({
           </button>
         </div>
       </header>
-      <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
+      {/* overflow-y-auto: full-height views (builder) size to h-full and scroll
+          internally; taller pages (docs, settings) scroll here. */}
+      <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
     </div>
   );
 }
