@@ -19,7 +19,10 @@ export function LoginForm() {
     setBusy(false);
     if (res.ok) {
       const params = new URLSearchParams(window.location.search);
-      window.location.href = params.get("next") || "/";
+      // Only follow same-origin relative paths — a crafted ?next= must not send
+      // a fresh login to another site (or execute a javascript: URL).
+      const next = params.get("next") || "/";
+      window.location.href = next.startsWith("/") && !next.startsWith("//") ? next : "/";
     } else {
       const j = await res.json().catch(() => ({}));
       setError(j.error || "Login failed");

@@ -154,7 +154,7 @@ export function CatalogImport({ onImport }: { onImport: (rooms: QuoteRoom[]) => 
                   <span className="text-sm font-medium text-foreground">
                     {ratesFile ? `Rates catalog: ${ratesFile.name}` : "1. Rates catalog PDF (required)"}
                   </span>
-                  <span className="text-xs text-muted-foreground">The one with rates on it — scanned pages with handwriting work. Up to 30MB.</span>
+                  <span className="text-xs text-muted-foreground">The one with rates on it — scanned pages with handwriting work. Up to 22MB.</span>
                   <input type="file" accept="application/pdf,.pdf" className="hidden" onChange={(e) => { setRatesFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
                 </label>
                 <label className="flex min-h-[90px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border/70 p-5 text-center hover:bg-accent/40">
@@ -224,7 +224,7 @@ export function CatalogImport({ onImport }: { onImport: (rooms: QuoteRoom[]) => 
                                     type="number"
                                     value={perPieceRate(it) || ""}
                                     placeholder="0"
-                                    onChange={(e) => updateItem(ri, ii, { rate: toNumber(e.target.value), ratePerPiece: true, pending: false })}
+                                    onChange={(e) => updateItem(ri, ii, { rate: toNumber(e.target.value), ratePerPiece: true, pending: false, confidence: "high" })}
                                   />
                                   <span className="text-[10px] uppercase text-muted-foreground">Qty</span>
                                   <Input

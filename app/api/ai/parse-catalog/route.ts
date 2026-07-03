@@ -6,7 +6,9 @@ export const dynamic = "force-dynamic";
 // Vision parsing of a full catalog can take minutes.
 export const maxDuration = 600;
 
-const MAX_PDF_BYTES = 30 * 1024 * 1024; // API request limit is 32MB; leave headroom
+// Base64 inflates the PDF by 4/3 and the model API rejects requests over
+// 32MB, so the raw file must stay under ~22MB.
+const MAX_PDF_BYTES = 22 * 1024 * 1024;
 
 function badPdf(f: unknown): f is File {
   return f instanceof File && (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
@@ -18,7 +20,7 @@ export async function POST(req: Request) {
   const file = form?.get("file");
   if (!badPdf(file)) return NextResponse.json({ error: "Attach a PDF as the 'file' field." }, { status: 400 });
   if (file.size > MAX_PDF_BYTES) {
-    return NextResponse.json({ error: "PDF is larger than 30MB. Split it and try again." }, { status: 413 });
+    return NextResponse.json({ error: "PDF is larger than 22MB. Split it and try again." }, { status: 413 });
   }
   // Optional second PDF: the clean client original, used only for item photos.
   const imagesFile = form?.get("imagesFile");
@@ -38,6 +40,9 @@ export async function POST(req: Request) {
         result.usage.input += located.usage.input;
         result.usage.output += located.usage.output;
         await attachImages(result.catalog, cleanBuffer, (room, item) => located.boxes.get(photoKey(room, item.name)) ?? null);
+        // Items the locate pass missed still get their photo from the scan
+        // itself — a grainy photo beats no photo.
+        await attachImages(result.catalog, rateBuffer, (_room, item) => (item.imageUrl ? null : item.photo));
         imagesFrom = "clean";
       } else {
         await attachImages(result.catalog, rateBuffer, (_room, item) => item.photo);

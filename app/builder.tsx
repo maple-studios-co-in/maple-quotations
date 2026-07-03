@@ -44,7 +44,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function LivePreviewPanel({ data, computed, terms }: { data: QuoteData; computed: TotalsResult; terms: string[] }) {
+type PreviewBrand = { name?: string | null; primaryColor?: string | null; addressLine1?: string | null; addressLine2?: string | null; phone?: string | null };
+
+function LivePreviewPanel({ data, computed, terms, brand }: { data: QuoteData; computed: TotalsResult; terms: string[]; brand?: PreviewBrand | null }) {
   if (!data.client.name) {
     return (
       <div className="flex min-h-[420px] flex-col items-center justify-center rounded-md border border-dashed border-border bg-muted/30 p-8 text-center">
@@ -53,7 +55,7 @@ function LivePreviewPanel({ data, computed, terms }: { data: QuoteData; computed
       </div>
     );
   }
-  const accent = "#7a2e2a";
+  const accent = brand?.primaryColor || "#7a2e2a";
   const cream = "#f7f1e6";
   const ink = "#1c1917";
   const muted = "#6b6560";
@@ -61,9 +63,11 @@ function LivePreviewPanel({ data, computed, terms }: { data: QuoteData; computed
   return (
     <div style={{ background: "white", color: ink, padding: 24, minHeight: "100%", fontSize: 11, lineHeight: 1.6, border: `1px solid ${hairline}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", borderBottom: `2px solid ${accent}`, paddingBottom: 14, marginBottom: 16 }}>
-        <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700, fontSize: 16, color: accent }}>MAPLE FURNISHERS</div>
+        <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700, fontSize: 16, color: accent, textTransform: "uppercase" }}>{brand?.name || "Maple Furnishers"}</div>
         <div style={{ fontSize: 9, textAlign: "right", color: muted }}>
-          <div>B-3, W.H.S. Timber Market Kirti Nagar</div><div>Delhi-110015</div><div>9211819727</div>
+          <div>{brand?.addressLine1 || "B-3, W.H.S. Timber Market Kirti Nagar"}</div>
+          <div>{brand?.addressLine2 || "Delhi-110015"}</div>
+          <div>{brand?.phone || "9211819727"}</div>
         </div>
       </div>
       <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
@@ -134,6 +138,10 @@ export default function QuotationBuilderPage() {
   const [future, setFuture] = useState<QuoteData[]>([]);
   const [serverQuotes, setServerQuotes] = useState<{ id: string; number: string; total: number; status: string; createdAt: string; client: { name: string } | null }[]>([]);
   const [galleryTarget, setGalleryTarget] = useState<{ ri: number; ii: number } | null>(null);
+  const [brand, setBrand] = useState<PreviewBrand | null>(null);
+  useEffect(() => {
+    fetch("/api/brand").then((r) => (r.ok ? r.json() : null)).then(setBrand).catch(() => null);
+  }, []);
 
   function toast(msg: string, type: string = "success") {
     if (type === "error") sonnerToast.error(msg);
@@ -687,7 +695,12 @@ export default function QuotationBuilderPage() {
                           <td className="text-muted-foreground">{new Date(q.createdAt).toLocaleDateString()}</td>
                           <td className="text-right">
                             <div className="flex justify-end gap-3">
-                              <button onClick={() => { loadQuote((q as unknown as { data: QuoteData }).data, "Saved"); setActiveTab("client"); }} className="text-xs font-medium text-primary hover:underline">Load</button>
+                              <button onClick={async () => {
+                                const r = await fetch(`/api/quotations/${q.id}`).catch(() => null);
+                                const full = r?.ok ? await r.json() : null;
+                                if (full?.data) { loadQuote(full.data as QuoteData, "Saved"); setActiveTab("client"); }
+                                else toast("Could not load this quotation", "error");
+                              }} className="text-xs font-medium text-primary hover:underline">Load</button>
                               <button onClick={() => deleteServerQuote(q.id)} className="text-muted-foreground/50 hover:text-destructive">×</button>
                             </div>
                           </td>
@@ -756,7 +769,7 @@ export default function QuotationBuilderPage() {
                 ) : (
                   <button onClick={onGeneratePdf} className="block w-full overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-border" style={{ aspectRatio: "3 / 4.2" }}>
                     <div style={{ transformOrigin: "top left", transform: "scale(0.62)", width: "161.3%", height: "161.3%" }}>
-                      <LivePreviewPanel data={data} computed={computed} terms={terms} />
+                      <LivePreviewPanel data={data} computed={computed} terms={terms} brand={brand} />
                     </div>
                   </button>
                 )}

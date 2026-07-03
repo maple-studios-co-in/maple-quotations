@@ -59,8 +59,10 @@ export function GalleryPicker({ open, onClose, onSelect }: { open: boolean; onCl
     }
   }
 
-  async function onDelete(id: string) {
-    await fetch(`/api/assets/${id}`, { method: "DELETE" }).catch(() => null);
+  async function onDelete(a: GalleryAsset) {
+    if (!confirm(`Delete "${a.name}" from the gallery? Products using it lose their image.`)) return;
+    const res = await fetch(`/api/assets/${a.id}`, { method: "DELETE" }).catch(() => null);
+    if (!res?.ok) { toast.error("Could not delete this image"); return; }
     setRefreshKey((k) => k + 1);
   }
 
@@ -130,7 +132,7 @@ export function GalleryPicker({ open, onClose, onSelect }: { open: boolean; onCl
                   </div>
                   <button
                     type="button"
-                    onClick={() => onDelete(a.id)}
+                    onClick={() => onDelete(a)}
                     className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[10px] text-white opacity-0 transition-opacity hover:bg-destructive group-hover:opacity-100"
                     title="Delete from gallery"
                   >

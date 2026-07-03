@@ -46,6 +46,8 @@ For the AI suites (R7) you need a catalog PDF; a 3-page slice keeps cost low:
 | 6 | Visit `/login` while signed in | Redirects to `/` |
 | 7 | Visit `/docs` while signed in | Renders inside app shell, scrolls |
 | 8 | Sign out | Back to landing/login; builder inaccessible |
+| 9 | 9 wrong passwords in a row | 429 "Too many failed attempts"; works again after ~15 min |
+| 10 | Open `/login?next=https://example.com`, sign in | Lands on `/` (never an external site) |
 
 ## R2 — Quote builder core
 
@@ -74,6 +76,7 @@ For the AI suites (R7) you need a catalog PDF; a 3-page slice keeps cost low:
 | 1 | "Save draft" with a name | Appears under Drafts tab; survives reload |
 | 2 | Delete a draft | Removed after confirm |
 | 3 | "Save" (client name set) | Toast; appears under Saved with client name + total |
+| 3b | Tampered save (curl with total=1, items worth more) | Stored total is recomputed from the items, not the client's number |
 | 4 | "Save" again with same quote number, same client | Updates the same row (no duplicate) |
 | 4b | "Save" the same quote number with a DIFFERENT client name | Clear 409 error naming the other client; nothing overwritten |
 | 5 | Saved → Load | Quote loads into builder, including its saved T&C |
@@ -109,7 +112,7 @@ Set branding + company first (R4), build a quote with 2 rooms and at least one i
 | 7 | Remove banner + logo in Settings, regenerate | PDF still renders using text fallbacks (no crash, no blank header) |
 | 7b | Add an item image via LINK to an external site, generate | PDF renders (that image may be dropped); on failure a clear error toast appears |
 | 7c | Generate with the browser's popup blocker on | PDF downloads as a file instead, with a toast |
-| 8 | Live preview panel | Mirrors the same design (red bands, cream cards) |
+| 8 | Live preview panel | Mirrors the same design and shows YOUR company name/address/color from Settings |
 
 ## R6 — AI catalog import (needs API key; costs a few ₹ per run)
 

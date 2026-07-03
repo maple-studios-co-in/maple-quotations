@@ -2,11 +2,18 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@maple/db";
 import { tenantDb } from "@maple/core/lib/tenant-db";
 import { findOrCreateClient } from "@maple/core/lib/clientLink";
+import { computeTotals } from "@maple/core/lib/utils";
+import type { QuoteData } from "@maple/core/lib/types";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    return NextResponse.json(await (await tenantDb()).quotation.findMany({ orderBy: { createdAt: "desc" }, include: { client: { select: { name: true } } } }));
+    return NextResponse.json(
+      await (await tenantDb()).quotation.findMany({
+        orderBy: { createdAt: "desc" },
+        select: { id: true, number: true, total: true, status: true, createdAt: true, client: { select: { name: true } } },
+      })
+    );
   } catch {
     return NextResponse.json({ error: "Database not reachable. Set DATABASE_URL and run prisma migrate." }, { status: 503 });
   }
@@ -15,6 +22,18 @@ export async function GET() {
 export async function POST(req: Request) {
   const b = await req.json();
   if (!b.number) return NextResponse.json({ error: "Quote number required." }, { status: 400 });
+  const data = b.data as QuoteData | undefined;
+  if (!data || data.version !== 2 || !Array.isArray(data.rooms)) {
+    return NextResponse.json({ error: "Quote payload is malformed." }, { status: 400 });
+  }
+  // The stored total is authoritative for lists/reports — never trust the
+  // client's number, recompute from the quote content.
+  let total: number;
+  try {
+    total = Math.round(computeTotals(data).totals.grandTotal * 100) / 100;
+  } catch {
+    return NextResponse.json({ error: "Quote payload is malformed." }, { status: 400 });
+  }
   const incomingClientName = typeof b.client?.name === "string" ? b.client.name.trim() : "";
 
   try {
@@ -33,7 +52,7 @@ export async function POST(req: Request) {
     }
 
     const clientId = await findOrCreateClient(b.client || {});
-    const fields = { total: Number(b.total || 0), status: b.status || "draft", data: b.data, clientId };
+    const fields = { total, status: b.status || "draft", data: b.data, clientId };
     const q = existing
       ? await db.quotation.update({ where: { id: existing.id }, data: fields })
       : await db.quotation.create({ data: { number: b.number, ...fields } });
