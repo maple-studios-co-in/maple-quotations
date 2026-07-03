@@ -33,6 +33,9 @@ export function SuiteShell({
           <span className="text-sm font-semibold capitalize text-muted-foreground">{current.replace("-", " ")}</span>
         </div>
         <div className="flex items-center gap-3 text-sm">
+          <a href="/library" className="rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+            Library
+          </a>
           {(user.perms.includes("*") || user.role === "admin") && (
             <a href="/settings" className="rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
               Settings

@@ -45,6 +45,7 @@ app/
   gallery-picker.tsx       image gallery modal (browse/upload/select/delete)
   login/                   server page (redirects authed users) + client form
   settings/                admin settings: AI config + branding & company
+  library/                 product library + gallery management page
   docs/                    public docs site rendering /docs/*.md
   api/
     auth/login|logout      session cookie set/clear

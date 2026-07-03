@@ -18,7 +18,7 @@ an account.
   **Export sheet**, **Generate PDF**.
 - **Tabs** — Overview · Rooms & Items · Finance & T&C · Settlement · Drafts · Saved.
 - **Right panel** — live financial summary and a live proposal preview.
-- **Header** — your company logo, Settings (admins), Sign out.
+- **Header** — your company logo, Library, Settings (admins), Sign out.
 
 ## Building a quote
 
@@ -89,6 +89,18 @@ UPI ID and bank details that print on the proposal.
   full financial breakdown, terms, payment details, and your tagline in the footer.
 - **Export sheet** — an .xlsx in the team's rate-sheet format: items grouped under
   room headers with the Subtotal / Packing / Loading / GST / TOTAL block at the end.
+
+## The Library page
+
+The **Library** link in the header opens the management view for everything the
+pickers use:
+
+- **Products tab** — search all saved products (by code, name, category, spec),
+  create one manually with **+ New product** (name, category, spec, material, unit,
+  default rate, photo), edit any field, or delete. Deleting a product never touches
+  quotes that already used it.
+- **Gallery tab** — the shared image collection: upload images (multi-select),
+  search by name, delete. AI catalog imports add product photos here automatically.
 
 ## Settings (admins)
 

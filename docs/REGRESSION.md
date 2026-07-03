@@ -130,6 +130,10 @@ Set branding + company first (R4), build a quote with 2 rooms and at least one i
 | 3 | Search by code (e.g. MF-P-0003) | Exact product found |
 | 4 | Select 2 products → "Add to room" | Items appear in that room with rate, spec, and photo |
 | 5 | `GET /api/products?q=` via curl (authed) | JSON list with codes, imageUrl fields |
+| 6 | Header → **Library** → Products tab | All saved products listed with code, image, rate |
+| 7 | "+ New product": name + spec + rate + image, save | Appears in list with a fresh MF-P code |
+| 8 | Edit a product's rate, save | Row updates; "+ Library" picker in the builder shows the new rate |
+| 9 | Delete a product | Removed after confirm; existing quotes unaffected |
 
 ## R8 — Image gallery
 
@@ -140,6 +144,8 @@ Set branding + company first (R4), build a quote with 2 rooms and at least one i
 | 3 | Click an image | Sets that item's photo; shows in preview + PDF |
 | 4 | Hover a gallery tile → ✕ | Asset deleted after confirm/refresh |
 | 5 | Search gallery by name | Grid filters |
+| 6 | Library → Gallery tab: upload (multi-select) | Images appear in the grid |
+| 7 | Gallery tab: delete an image | Gone from grid; linked product falls back to no image |
 
 ## R9 — Landing & docs content
 
@@ -155,5 +161,4 @@ Set branding + company first (R4), build a quote with 2 rooms and at least one i
 
 - PDF amounts use "Rs" not "₹" (built-in PDF font limitation).
 - Item images are embedded data URLs inside the quote JSON; large imports make saved quotes heavy (roadmap: object storage).
-- Products/gallery have no dedicated management page yet — creation happens via AI import or API; deletion via gallery picker / API.
 - `getBrand()` on a host that matches no tenant falls back to the first tenant.
