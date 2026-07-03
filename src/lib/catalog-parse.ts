@@ -7,6 +7,8 @@ import { getSetting } from "./settings";
 // The PDF goes to the API as a native document block — no rasterization needed
 // (limits: 32MB request, well above our 3-4MB catalogs).
 
+export type PhotoBox = { page: number; x: number; y: number; w: number; h: number };
+
 export type ParsedItem = {
   name: string;
   quantity: number;
@@ -16,10 +18,31 @@ export type ParsedItem = {
   notes: string[];
   pending: boolean;
   confidence: "high" | "low";
+  photo: PhotoBox | null;
+  imageUrl?: string; // attached later by the crop step
 };
 
 export type ParsedRoom = { name: string; items: ParsedItem[] };
 export type ParsedCatalog = { rooms: ParsedRoom[] };
+
+const PHOTO_SCHEMA = {
+  anyOf: [
+    {
+      type: "object",
+      additionalProperties: false,
+      required: ["page", "x", "y", "w", "h"],
+      properties: {
+        page: { type: "integer", description: "1-based page number the photo is on" },
+        x: { type: "number", description: "Photo left edge, percent of page width (0-100)" },
+        y: { type: "number", description: "Photo top edge, percent of page height (0-100)" },
+        w: { type: "number", description: "Photo width, percent of page width" },
+        h: { type: "number", description: "Photo height, percent of page height" },
+      },
+    },
+    { type: "null" },
+  ],
+  description: "Bounding box of the item's product photograph; null when there is no photo",
+} as const;
 
 // Structured-output schema: every object needs additionalProperties:false and
 // full `required` lists; numeric constraints are not supported.
@@ -41,7 +64,7 @@ const CATALOG_SCHEMA = {
             items: {
               type: "object",
               additionalProperties: false,
-              required: ["name", "quantity", "dimensions", "rate", "ratePerPiece", "notes", "pending", "confidence"],
+              required: ["name", "quantity", "dimensions", "rate", "ratePerPiece", "notes", "pending", "confidence", "photo"],
               properties: {
                 name: { type: "string", description: "Item name without the quantity suffix, e.g. 'DINING CHAIR'" },
                 quantity: { type: "integer", description: "From 'x 8' style suffixes; 1 when absent" },
@@ -51,6 +74,7 @@ const CATALOG_SCHEMA = {
                 notes: { type: "array", items: { type: "string" }, description: "Margin notes like 'with marble', 'SS backrests'" },
                 pending: { type: "boolean", description: "true when marked Pending or crossed out without a replacement rate" },
                 confidence: { type: "string", enum: ["high", "low"], description: "low when the handwriting is ambiguous" },
+                photo: PHOTO_SCHEMA,
               },
             },
           },
@@ -74,7 +98,35 @@ Domain conventions for the handwriting:
 - Combined items ("BED" + "BACKREST" with one shared rate) become one item named for both, with the shared rate.
 - Mark confidence "low" whenever the handwriting could plausibly read two ways; never guess silently.
 
+For each item, also return the bounding box of its product photograph on the page
+(photo: page number plus x/y/w/h as percentages of the page). Box the photograph only,
+not the text below it. Use null when an item has no photo.
+
 Extract every item on every page. Do not invent rates that are not written.`;
+
+// Second pass for the optional clean client PDF (better print quality, no
+// handwriting): locate each already-parsed item's photo so crops come from the
+// clean pages instead of the scan.
+const LOCATE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["items"],
+  properties: {
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["room", "name", "photo"],
+        properties: {
+          room: { type: "string", description: "Room name exactly as given in the list" },
+          name: { type: "string", description: "Item name exactly as given in the list" },
+          photo: PHOTO_SCHEMA,
+        },
+      },
+    },
+  },
+} as const;
 
 export async function parseCatalogPdf(pdfBase64: string): Promise<{ catalog: ParsedCatalog; model: string; usage: { input: number; output: number } }> {
   const [apiKey, model] = await Promise.all([getSetting("anthropicApiKey"), getSetting("aiParseModel")]);
@@ -86,13 +138,63 @@ export async function parseCatalogPdf(pdfBase64: string): Promise<{ catalog: Par
     model,
     max_tokens: 64000,
     system: SYSTEM_PROMPT,
-    output_config: { format: { type: "json_schema" as const, schema: CATALOG_SCHEMA as unknown as Record<string, unknown> } },
+    schema: CATALOG_SCHEMA as unknown as Record<string, unknown>,
+    userText: "Extract all rooms and items from this catalog.",
+    pdfBase64,
+  };
+  const { json, model: served, usage } = await runVisionRequest<ParsedCatalog>(client, model, params);
+  return { catalog: json, model: served, usage };
+}
+
+/** Locate already-parsed items' photos in a second (clean) PDF, by name+room. */
+export async function locateItemPhotos(
+  pdfBase64: string,
+  catalog: ParsedCatalog
+): Promise<{ boxes: Map<string, PhotoBox>; usage: { input: number; output: number } }> {
+  const [apiKey, model] = await Promise.all([getSetting("anthropicApiKey"), getSetting("aiParseModel")]);
+  if (!apiKey) throw new CatalogParseError("No Anthropic API key configured. An admin can add one in Settings.", 503);
+  const client = new Anthropic({ apiKey });
+
+  const wanted = catalog.rooms.flatMap((r) => r.items.map((it) => ({ room: r.name, name: it.name })));
+  const { json, usage } = await runVisionRequest<{ items: { room: string; name: string; photo: PhotoBox | null }[] }>(
+    client,
+    model,
+    {
+      system:
+        "You locate product photographs in a furniture catalog PDF. For each requested item, return the bounding box of its photograph (page number plus x/y/w/h as percentages of the page). Box the photograph only, not the caption text. Rooms and item names in the PDF may differ slightly in punctuation from the list; match by meaning. Use null when you cannot find the item.",
+      schema: LOCATE_SCHEMA as unknown as Record<string, unknown>,
+      userText: `Locate the photo for each of these items:\n${JSON.stringify(wanted)}`,
+      pdfBase64,
+    }
+  );
+
+  const boxes = new Map<string, PhotoBox>();
+  for (const entry of json.items || []) {
+    if (entry.photo) boxes.set(photoKey(entry.room, entry.name), entry.photo);
+  }
+  return { boxes, usage };
+}
+
+export function photoKey(room: string, name: string): string {
+  return `${room}::${name}`.toLowerCase().replace(/[^a-z0-9:]+/g, "");
+}
+
+async function runVisionRequest<T>(
+  client: Anthropic,
+  model: string,
+  req: { system: string; schema: Record<string, unknown>; userText: string; pdfBase64: string }
+): Promise<{ json: T; model: string; usage: { input: number; output: number } }> {
+  const params = {
+    model,
+    max_tokens: 64000,
+    system: req.system,
+    output_config: { format: { type: "json_schema" as const, schema: req.schema } },
     messages: [
       {
         role: "user" as const,
         content: [
-          { type: "document" as const, source: { type: "base64" as const, media_type: "application/pdf" as const, data: pdfBase64 } },
-          { type: "text" as const, text: "Extract all rooms and items from this catalog." },
+          { type: "document" as const, source: { type: "base64" as const, media_type: "application/pdf" as const, data: req.pdfBase64 } },
+          { type: "text" as const, text: req.userText },
         ],
       },
     ],
@@ -123,18 +225,14 @@ export async function parseCatalogPdf(pdfBase64: string): Promise<{ catalog: Par
   }
   if (!text) throw new CatalogParseError("The model returned no content.", 502);
 
-  let catalog: ParsedCatalog;
+  let json: T;
   try {
-    catalog = JSON.parse(text) as ParsedCatalog;
+    json = JSON.parse(text) as T;
   } catch {
     throw new CatalogParseError("Could not parse the model output.", 502);
   }
 
-  return {
-    catalog,
-    model: message.model,
-    usage: { input: message.usage.input_tokens, output: message.usage.output_tokens },
-  };
+  return { json, model: message.model, usage: { input: message.usage.input_tokens, output: message.usage.output_tokens } };
 }
 
 export class CatalogParseError extends Error {

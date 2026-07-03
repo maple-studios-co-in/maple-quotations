@@ -22,6 +22,7 @@ type ParsedItem = {
   notes: string[];
   pending: boolean;
   confidence: "high" | "low";
+  imageUrl?: string;
 };
 type ParsedRoom = { name: string; items: ParsedItem[] };
 
@@ -41,15 +42,16 @@ export function CatalogImport({ onImport }: { onImport: (rooms: QuoteRoom[]) => 
   const [rooms, setRooms] = useState<ParsedRoom[]>([]);
   const [meta, setMeta] = useState<{ model: string; input: number; output: number } | null>(null);
   const [error, setError] = useState("");
+  const [ratesFile, setRatesFile] = useState<File | null>(null);
+  const [cleanFile, setCleanFile] = useState<File | null>(null);
 
-  async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
+  async function onParse() {
+    if (!ratesFile) return;
     setPhase("parsing");
     setError("");
     const body = new FormData();
-    body.append("file", file);
+    body.append("file", ratesFile);
+    if (cleanFile) body.append("imagesFile", cleanFile);
     try {
       const res = await fetch("/api/ai/parse-catalog", { method: "POST", body });
       const j = await res.json();
@@ -85,6 +87,7 @@ export function CatalogImport({ onImport }: { onImport: (rooms: QuoteRoom[]) => 
             category: it.name,
             description: it.notes.join("; "),
             specification: it.dimensions,
+            imageUrl: it.imageUrl || "",
             price: perPieceRate(it),
             quantity: it.quantity,
             unitType: "nos",
@@ -121,13 +124,30 @@ export function CatalogImport({ onImport }: { onImport: (rooms: QuoteRoom[]) => 
             </div>
 
             {phase === "idle" && (
-              <div className="p-8">
-                {error && <div className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</div>}
-                <label className="flex min-h-[180px] cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border p-8 text-center hover:bg-accent/40">
-                  <span className="text-sm font-medium text-foreground">Choose a catalog PDF</span>
-                  <span className="text-xs text-muted-foreground">Scanned pages with handwritten rates work. Up to 30MB.</span>
-                  <input type="file" accept="application/pdf,.pdf" className="hidden" onChange={onUpload} />
+              <div className="space-y-4 p-6">
+                {error && <div className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</div>}
+                <label className="flex min-h-[110px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border p-5 text-center hover:bg-accent/40">
+                  <span className="text-sm font-medium text-foreground">
+                    {ratesFile ? `Rates catalog: ${ratesFile.name}` : "1. Rates catalog PDF (required)"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">The one with rates on it — scanned pages with handwriting work. Up to 30MB.</span>
+                  <input type="file" accept="application/pdf,.pdf" className="hidden" onChange={(e) => { setRatesFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
                 </label>
+                <label className="flex min-h-[90px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border/70 p-5 text-center hover:bg-accent/40">
+                  <span className="text-sm font-medium text-foreground">
+                    {cleanFile ? `Clean catalog: ${cleanFile.name}` : "2. Clean client PDF for photos (optional)"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    The original catalog without handwriting. Item photos are cropped from this when provided, otherwise from the rates PDF.
+                  </span>
+                  <input type="file" accept="application/pdf,.pdf" className="hidden" onChange={(e) => { setCleanFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+                </label>
+                <div className="flex items-center justify-between gap-3">
+                  {cleanFile ? (
+                    <button onClick={() => setCleanFile(null)} className="text-xs font-medium text-muted-foreground hover:text-destructive">Remove clean PDF</button>
+                  ) : <span />}
+                  <Button size="sm" disabled={!ratesFile} onClick={onParse}>Parse catalog</Button>
+                </div>
               </div>
             )}
 
@@ -159,6 +179,11 @@ export function CatalogImport({ onImport }: { onImport: (rooms: QuoteRoom[]) => 
                             const needsLook = it.pending || it.confidence === "low" || it.rate == null;
                             return (
                               <div key={ii} className={`flex flex-wrap items-center gap-3 px-3 py-2.5 ${needsLook ? "bg-amber-50" : ""}`}>
+                                {it.imageUrl ? (
+                                  <img src={it.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded border border-border object-cover" />
+                                ) : (
+                                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded border border-border bg-muted text-muted-foreground/40">▦</div>
+                                )}
                                 <div className="min-w-0 flex-1">
                                   <div className="truncate text-sm font-medium text-foreground">{it.name}</div>
                                   <div className="truncate text-[11px] text-muted-foreground">

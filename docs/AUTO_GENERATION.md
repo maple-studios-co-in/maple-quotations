@@ -97,7 +97,7 @@ the source catalog.
 | 0 | Sheet-format export (`Export sheet` button) | **Done** |
 | 1 | `POST /api/ai/parse-catalog`: PDF → Claude vision (native document block, no rasterization needed) → structured rooms/items | **Done** — verified on the real scanned catalog; all handwritten rates read correctly, ambiguous ones flagged |
 | 2 | Review UI ("Import catalog (AI)" in the builder): editable rows, pending/low-confidence highlighted, then "Add to quote" | **Done** |
-| 3 | Image cropping into item thumbnails | Next |
+| 3 | Item photos: the parse also returns each photo's bounding box; pages are rendered server-side and photos cropped into item thumbnails (review screen + PDF proposal). Optionally upload the clean client PDF alongside the rates scan — photos then crop from the clean original instead of the scan. | **Done** — verified both modes on the real PDFs; 23/23 items photographed correctly |
 | 4 | Price memory: parsed items feed a catalog table so repeat items suggest last-used rates | Later |
 
 Cost per parse (Fable 5): roughly ₹8-10 per page, so a 27-page catalog runs ~₹200-250.
