@@ -50,7 +50,9 @@ export function ProductPicker({ onAdd }: { onAdd: (items: QuoteItem[]) => void }
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState<LibraryProduct[]>([]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Keyed by id but storing the product itself, so selections made under one
+  // search survive when the results change under a different search.
+  const [selected, setSelected] = useState<Map<string, LibraryProduct>>(new Map());
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
 
@@ -67,11 +69,11 @@ export function ProductPicker({ onAdd }: { onAdd: (items: QuoteItem[]) => void }
     return () => clearTimeout(t);
   }, [open, query]);
 
-  function toggle(id: string) {
+  function toggle(product: LibraryProduct) {
     setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const next = new Map(prev);
+      if (next.has(product.id)) next.delete(product.id);
+      else next.set(product.id, product);
       return next;
     });
   }
@@ -79,11 +81,11 @@ export function ProductPicker({ onAdd }: { onAdd: (items: QuoteItem[]) => void }
   function close() {
     setOpen(false);
     setQuery("");
-    setSelected(new Set());
+    setSelected(new Map());
   }
 
   async function confirmAdd() {
-    const picked = products.filter((p) => selected.has(p.id));
+    const picked = [...selected.values()];
     if (!picked.length) return;
     setAdding(true);
     const items: QuoteItem[] = [];
@@ -144,7 +146,7 @@ export function ProductPicker({ onAdd }: { onAdd: (items: QuoteItem[]) => void }
                         type="checkbox"
                         className="h-4 w-4 shrink-0 accent-[var(--primary)]"
                         checked={selected.has(p.id)}
-                        onChange={() => toggle(p.id)}
+                        onChange={() => toggle(p)}
                       />
                       {p.imageUrl ? (
                         <img src={p.imageUrl} alt="" className="h-10 w-10 shrink-0 rounded border border-border object-cover" />

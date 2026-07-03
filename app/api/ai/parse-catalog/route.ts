@@ -39,7 +39,13 @@ export async function POST(req: Request) {
         const located = await locateItemPhotos(cleanBuffer.toString("base64"), result.catalog);
         result.usage.input += located.usage.input;
         result.usage.output += located.usage.output;
-        await attachImages(result.catalog, cleanBuffer, (room, item) => located.boxes.get(photoKey(room, item.name)) ?? null);
+        const consumed = new Set<string>();
+        await attachImages(result.catalog, cleanBuffer, (room, item) => {
+          const key = photoKey(room, item.name);
+          if (consumed.has(key)) return null; // duplicate names: scan fallback handles the rest
+          consumed.add(key);
+          return located.boxes.get(key) ?? null;
+        });
         // Items the locate pass missed still get their photo from the scan
         // itself — a grainy photo beats no photo.
         await attachImages(result.catalog, rateBuffer, (_room, item) => (item.imageUrl ? null : item.photo));

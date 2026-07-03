@@ -173,3 +173,4 @@ Set branding + company first (R4), build a quote with 2 rooms and at least one i
 - PDF amounts use "Rs" not "₹" (built-in PDF font limitation).
 - Item images are embedded data URLs inside the quote JSON; large imports make saved quotes heavy (roadmap: object storage).
 - `getBrand()` on a host that matches no tenant falls back to the first tenant.
+- Assets and products are tenant-scoped; the empty-database brand fallback is "Maple Furnishers".

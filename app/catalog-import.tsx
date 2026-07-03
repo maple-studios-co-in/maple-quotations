@@ -118,7 +118,8 @@ export function CatalogImport({ onImport }: { onImport: (rooms: QuoteRoom[]) => 
       .then(async (res) => {
         if (!res.ok) throw new Error();
         const j = await res.json();
-        toast.success(`Saved to product library (${j.created} new, ${j.updated} updated)`);
+        const skippedNote = j.skipped ? `; ${j.skipped} skipped (library cap)` : "";
+        toast.success(`Saved to product library (${j.created} new, ${j.updated} updated${skippedNote})`);
       })
       .catch(() => toast.error("Could not save items to the product library"));
 

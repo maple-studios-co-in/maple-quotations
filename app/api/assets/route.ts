@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@maple/db";
 import { createAsset, ASSET_KINDS, MAX_ASSET_BYTES, assetUrl, type AssetKind } from "@maple/core/lib/assets";
+import { getTenantId } from "@maple/core/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
@@ -9,8 +10,10 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const kind = url.searchParams.get("kind") ?? undefined;
   const q = url.searchParams.get("q")?.trim();
+  const tenantId = await getTenantId();
   const assets = await prisma.asset.findMany({
     where: {
+      tenantId,
       ...(kind ? { kind } : {}),
       ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
     },

@@ -31,6 +31,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (b.name !== undefined && !String(b.name).trim()) {
     return NextResponse.json({ error: "Product name cannot be empty." }, { status: 400 });
   }
+  if (b.defaultRate !== undefined && b.defaultRate !== null && !Number.isFinite(Number(b.defaultRate))) {
+    return NextResponse.json({ error: "defaultRate must be a number." }, { status: 400 });
+  }
 
   let imageAssetId: string | undefined;
   if (b.imageDataUrl) {

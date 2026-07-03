@@ -50,6 +50,9 @@ export async function POST(req: Request) {
   const name = typeof b.name === "string" ? b.name.trim() : "";
   if (!name) return NextResponse.json({ error: "Product name is required." }, { status: 400 });
 
+  if (b.defaultRate != null && !Number.isFinite(Number(b.defaultRate))) {
+    return NextResponse.json({ error: "defaultRate must be a number." }, { status: 400 });
+  }
   const tenantId = await getTenantId();
   const imageAssetId = b.imageDataUrl ? (await createAssetFromDataUrl("product", name, b.imageDataUrl))?.id ?? null : null;
   const product = await prisma.product.create({

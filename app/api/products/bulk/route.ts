@@ -22,7 +22,9 @@ type BulkItem = {
 // on purpose: codes come from the Counter row.
 export async function POST(req: Request) {
   const b = await req.json().catch(() => ({}));
-  const items: BulkItem[] = Array.isArray(b.items) ? b.items.slice(0, MAX_ITEMS) : [];
+  const allItems: BulkItem[] = Array.isArray(b.items) ? b.items : [];
+  const items = allItems.slice(0, MAX_ITEMS);
+  const skipped = allItems.length - items.length;
   const tenantId = await getTenantId();
 
   let created = 0;
@@ -77,5 +79,5 @@ export async function POST(req: Request) {
       created++;
     }
   }
-  return NextResponse.json({ created, updated });
+  return NextResponse.json({ created, updated, skipped });
 }

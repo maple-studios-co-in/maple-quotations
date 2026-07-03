@@ -17,7 +17,7 @@ export type Brand = {
   domain: string | null;
 };
 const DEFAULT: Brand = {
-  name: "MapleOne",
+  name: "Maple Furnishers",
   logoUrl: null,
   bannerUrl: null,
   primaryColor: null,
