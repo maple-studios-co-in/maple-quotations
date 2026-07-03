@@ -51,57 +51,63 @@ function LivePreviewPanel({ data, computed, terms }: { data: QuoteData; computed
       </div>
     );
   }
+  const accent = "#7a2e2a";
+  const cream = "#f7f1e6";
+  const ink = "#1c1917";
+  const muted = "#6b6560";
+  const hairline = "#e7e0d6";
   return (
-    <div style={{ background: "white", color: "#000", padding: 24, minHeight: "100%", fontSize: 11, lineHeight: 1.6, border: "2px solid #000" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "4px solid #000", paddingBottom: 16, marginBottom: 16 }}>
-        <div style={{ fontWeight: 900, fontSize: 16, letterSpacing: "-0.02em" }}>MAPLE FURNISHERS</div>
-        <div style={{ fontSize: 9, textAlign: "right", fontWeight: 600 }}>
+    <div style={{ background: "white", color: ink, padding: 24, minHeight: "100%", fontSize: 11, lineHeight: 1.6, border: `1px solid ${hairline}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", borderBottom: `2px solid ${accent}`, paddingBottom: 14, marginBottom: 16 }}>
+        <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700, fontSize: 16, color: accent }}>MAPLE FURNISHERS</div>
+        <div style={{ fontSize: 9, textAlign: "right", color: muted }}>
           <div>B-3, W.H.S. Timber Market Kirti Nagar</div><div>Delhi-110015</div><div>9211819727</div>
         </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24, border: "2px solid #000", padding: 12 }}>
-        <div>
-          <div style={{ fontSize: 9, textTransform: "uppercase", marginBottom: 4, fontWeight: 800 }}>Prepared For</div>
-          <div style={{ fontWeight: 800, fontSize: 14 }}>{data.client.name || "—"}</div>
-          <div style={{ fontWeight: 600 }}>{data.client.phone}</div>
+      <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+        <div style={{ flex: 1, background: cream, border: `0.75px solid ${accent}`, borderRadius: 4, padding: 12 }}>
+          <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, fontWeight: 700, color: accent }}>Prepared For</div>
+          <div style={{ fontWeight: 700, fontSize: 13 }}>{data.client.name || "—"}</div>
+          <div style={{ fontSize: 10, color: muted }}>{data.client.phone}</div>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 9, textTransform: "uppercase", marginBottom: 4, fontWeight: 800 }}>Ref No.</div>
-          <div style={{ fontWeight: 800, fontSize: 14 }}>{data.quote.number}</div>
-          <div style={{ fontSize: 10, marginTop: 2, fontWeight: 600 }}>{data.quote.date}</div>
+        <div style={{ flex: 1, background: cream, border: `0.75px solid ${accent}`, borderRadius: 4, padding: 12, textAlign: "right" }}>
+          <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, fontWeight: 700, color: accent }}>Reference</div>
+          <div style={{ fontWeight: 700, fontSize: 13 }}>{data.quote.number}</div>
+          <div style={{ fontSize: 10, marginTop: 2, color: muted }}>{data.quote.date}</div>
         </div>
       </div>
       {data.rooms.map((room) => (
         <div key={room.id} style={{ marginBottom: 24 }}>
-          <div style={{ background: "#000", color: "white", padding: "8px 12px", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
-            {room.name || "Room"} — {room.items.length} items
+          <div style={{ display: "flex", justifyContent: "space-between", background: accent, color: "white", padding: "7px 10px", borderRadius: 3, fontSize: 10, marginBottom: 8 }}>
+            <span style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700 }}>{room.name || "Room"}</span>
+            <span style={{ opacity: 0.85, fontSize: 9 }}>{room.items.length} items</span>
           </div>
           {room.items.map((item) => {
             const total = (item.price || 0) * (item.unitValue || 1) * (item.quantity || 1);
             return (
-              <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "2px solid #000" }}>
+              <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${hairline}` }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 800, fontSize: 12 }}>{item.category || "Item"}</div>
-                  <div style={{ fontSize: 10, fontWeight: 600, marginTop: 2 }}>{item.description}</div>
-                  <div style={{ fontSize: 9, fontWeight: 800, marginTop: 4 }}>QTY: {item.quantity} × ₹{item.price?.toLocaleString()}</div>
+                  <div style={{ fontWeight: 700, fontSize: 11 }}>{item.category || "Item"}</div>
+                  <div style={{ fontSize: 10, color: muted, marginTop: 2 }}>{item.description}</div>
+                  <div style={{ fontSize: 9, color: muted, marginTop: 4 }}>{item.quantity} {item.unitType} × ₹{item.price?.toLocaleString()}</div>
                 </div>
-                <div style={{ fontWeight: 900, fontSize: 14 }}>₹{total.toLocaleString()}</div>
+                <div style={{ fontWeight: 700, fontSize: 12 }}>₹{total.toLocaleString()}</div>
               </div>
             );
           })}
         </div>
       ))}
-      <div style={{ marginTop: 24, borderTop: "4px solid #000", paddingTop: 16 }}>
+      <div style={{ marginTop: 24, marginLeft: "auto", width: "70%" }}>
         {computed.totals.lines.map((line) => (
-          <div key={line.key} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontWeight: line.emphasis ? 900 : 700, fontSize: line.emphasis ? 14 : 11, textTransform: "uppercase" }}>
+          <div key={line.key} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontWeight: line.emphasis ? 700 : 400, fontSize: line.emphasis ? 12 : 10, color: line.isLast ? accent : line.emphasis ? ink : muted, borderTop: line.isLast ? `1.5px solid ${accent}` : "none", paddingTop: line.isLast ? 8 : 0 }}>
             <span>{line.label}</span><span>₹{line.value?.toLocaleString()}</span>
           </div>
         ))}
       </div>
       {terms.length > 0 && (
-        <div style={{ marginTop: 32, padding: 16, border: "2px solid #000" }}>
-          <div style={{ fontWeight: 900, fontSize: 11, textTransform: "uppercase", marginBottom: 12, letterSpacing: "0.05em", borderBottom: "2px solid #000", paddingBottom: 8 }}>Terms &amp; Conditions</div>
-          {terms.map((t, i) => <div key={i} style={{ fontSize: 10, marginBottom: 6, lineHeight: 1.5, fontWeight: 600 }}>{i + 1}. {t}</div>)}
+        <div style={{ marginTop: 28 }}>
+          <div style={{ fontWeight: 700, fontSize: 9, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.12em", color: accent }}>Terms &amp; Conditions</div>
+          {terms.map((t, i) => <div key={i} style={{ fontSize: 10, marginBottom: 5, lineHeight: 1.5, color: ink }}>{i + 1}. {t}</div>)}
         </div>
       )}
     </div>
@@ -236,8 +242,37 @@ export default function QuotationBuilderPage() {
 
   async function onGeneratePdf() {
     toast("Generating PDF…");
-    const logo = await fetch("/api/brand").then((r) => r.json()).then((b) => b.logoUrl as string | undefined).catch(() => undefined);
-    const blob = await pdf(<MasterProposalPdf data={data} computed={computed} terms={terms} logo={logo} />).toBlob();
+    // react-pdf renders data URLs reliably; convert brand images before handing them over.
+    const toDataUrl = async (url: string | null | undefined): Promise<string | null> => {
+      if (!url) return null;
+      try {
+        const r = await fetch(url);
+        if (!r.ok) return null;
+        const blob = await r.blob();
+        return await new Promise<string | null>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : null);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(blob);
+        });
+      } catch { return null; }
+    };
+    const fetched = await fetch("/api/brand").then((r) => r.json()).catch(() => null);
+    const [logoUrl, bannerUrl] = await Promise.all([toDataUrl(fetched?.logoUrl), toDataUrl(fetched?.bannerUrl)]);
+    const brand = {
+      name: (fetched?.name as string | null) ?? null,
+      logoUrl,
+      bannerUrl,
+      primaryColor: (fetched?.primaryColor as string | null) ?? null,
+      addressLine1: (fetched?.addressLine1 as string | null) ?? null,
+      addressLine2: (fetched?.addressLine2 as string | null) ?? null,
+      phone: (fetched?.phone as string | null) ?? null,
+      email: (fetched?.email as string | null) ?? null,
+      gstin: (fetched?.gstin as string | null) ?? null,
+      website: (fetched?.website as string | null) ?? null,
+      tagline: (fetched?.tagline as string | null) ?? null,
+    };
+    const blob = await pdf(<MasterProposalPdf data={data} computed={computed} terms={terms} brand={brand} />).toBlob();
     window.open(URL.createObjectURL(blob), "_blank");
   }
 
