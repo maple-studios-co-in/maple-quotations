@@ -11,6 +11,8 @@ import { downloadQuoteSheet } from "@maple/core/lib/sheet-export";
 import { TEMPLATES } from "@maple/core/lib/constants";
 import { MasterProposalPdf } from "./pdf-catalog";
 import { CatalogImport } from "./catalog-import";
+import { ProductPicker } from "./product-picker";
+import { GalleryPicker } from "./gallery-picker";
 
 import { Button } from "@maple/core/ui/button";
 import { Input, Select, Textarea } from "@maple/core/ui/input";
@@ -131,6 +133,7 @@ export default function QuotationBuilderPage() {
   const [history, setHistory] = useState<QuoteData[]>([]);
   const [future, setFuture] = useState<QuoteData[]>([]);
   const [serverQuotes, setServerQuotes] = useState<{ id: string; number: string; total: number; status: string; createdAt: string; client: { name: string } | null }[]>([]);
+  const [galleryTarget, setGalleryTarget] = useState<{ ri: number; ii: number } | null>(null);
 
   function toast(msg: string, type: string = "success") {
     if (type === "error") sonnerToast.error(msg);
@@ -461,6 +464,7 @@ export default function QuotationBuilderPage() {
                         {TEMPLATES.map((t) => <option key={t.label} value={t.label}>{t.label}</option>)}
                       </Select>
                       <Button variant="outline" size="sm" onClick={() => addItem(ri)}>+ Item</Button>
+                      <ProductPicker onAdd={(items) => updateData((prev) => ({ ...prev, rooms: prev.rooms.map((r, i) => (i !== ri ? r : { ...r, items: [...r.items, ...items] })) }))} />
                       <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => deleteRoom(ri)}>✕</Button>
                     </div>
                   </div>
@@ -477,6 +481,7 @@ export default function QuotationBuilderPage() {
                               <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/70 opacity-0 transition-opacity group-hover/img:opacity-100">
                                 <label className="cursor-pointer text-[9px] font-bold text-white hover:underline">FILE<input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(ri, ii, e)} /></label>
                                 <button onClick={() => { const u = prompt("Enter image URL:"); if (u) updateItem(ri, ii, { imageUrl: u }); }} className="text-[9px] font-bold text-white hover:underline">LINK</button>
+                                <button onClick={() => setGalleryTarget({ ri, ii })} className="text-[9px] font-bold text-white hover:underline">GALLERY</button>
                               </div>
                             </div>
                             <div className="flex-1 space-y-1.5">
@@ -686,6 +691,13 @@ export default function QuotationBuilderPage() {
           </Card>
         </div>
       )}
+
+      {/* Shared image-gallery picker for item photos */}
+      <GalleryPicker
+        open={galleryTarget !== null}
+        onClose={() => setGalleryTarget(null)}
+        onSelect={(dataUrl) => { if (galleryTarget) updateItem(galleryTarget.ri, galleryTarget.ii, { imageUrl: dataUrl }); }}
+      />
     </div>
   );
 }
