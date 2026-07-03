@@ -10,6 +10,7 @@ import { money, computeTotals, safeParse, newItem, newRoom, makeId, todayISODate
 import { downloadQuoteSheet } from "@maple/core/lib/sheet-export";
 import { TEMPLATES } from "@maple/core/lib/constants";
 import { MasterProposalPdf } from "./pdf-catalog";
+import { CatalogImport } from "./catalog-import";
 
 import { Button } from "@maple/core/ui/button";
 import { Input, Select, Textarea } from "@maple/core/ui/input";
@@ -402,6 +403,7 @@ export default function QuotationBuilderPage() {
                   <p className="text-sm text-muted-foreground">Allocation by room &amp; category</p>
                 </div>
                 <div className="flex gap-2">
+                  <CatalogImport onImport={(imported) => updateData((prev) => ({ ...prev, rooms: [...prev.rooms, ...imported] }))} />
                   <label className="inline-flex h-8 cursor-pointer items-center rounded-md border border-border bg-card px-3 text-xs font-medium hover:bg-accent">
                     Import Excel<input type="file" className="hidden" accept=".xlsx,.xls" onChange={onImportExcel} />
                   </label>

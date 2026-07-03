@@ -95,10 +95,13 @@ the source catalog.
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Sheet-format export (`Export sheet` button) | **Done** |
-| 1 | `POST /api/ai/parse-catalog` + rasterize + vision parse + normalize | Next: needs `ANTHROPIC_API_KEY` in env |
-| 2 | Review UI (page image vs parsed rows) + "Create quotation" | After 1 |
-| 3 | Image cropping into item thumbnails | After 2 |
+| 1 | `POST /api/ai/parse-catalog`: PDF → Claude vision (native document block, no rasterization needed) → structured rooms/items | **Done** — verified on the real scanned catalog; all handwritten rates read correctly, ambiguous ones flagged |
+| 2 | Review UI ("Import catalog (AI)" in the builder): editable rows, pending/low-confidence highlighted, then "Add to quote" | **Done** |
+| 3 | Image cropping into item thumbnails | Next |
 | 4 | Price memory: parsed items feed a catalog table so repeat items suggest last-used rates | Later |
+
+Cost per parse (Fable 5): roughly ₹8-10 per page, so a 27-page catalog runs ~₹200-250.
+Sonnet 5 is ~4x cheaper and fine for clean text-layer PDFs.
 
 ## 5. Configuration
 
