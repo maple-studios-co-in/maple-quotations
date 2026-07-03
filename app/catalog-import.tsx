@@ -98,6 +98,30 @@ export function CatalogImport({ onImport }: { onImport: (rooms: QuoteRoom[]) => 
     onImport(quoteRooms);
     const itemCount = quoteRooms.reduce((s, r) => s + r.items.length, 0);
     toast.success(`Imported ${itemCount} items across ${quoteRooms.length} rooms`);
+
+    // Fire-and-forget: grow the product library from the reviewed items.
+    // The quote import above already happened — never block or undo it.
+    const libraryItems = rooms.flatMap((r) =>
+      r.items.map((it) => ({
+        name: it.name,
+        specification: it.dimensions,
+        material: undefined,
+        rate: perPieceRate(it) || undefined,
+        imageDataUrl: it.imageUrl,
+      }))
+    );
+    fetch("/api/products/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: libraryItems }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error();
+        const j = await res.json();
+        toast.success(`Saved to product library (${j.created} new, ${j.updated} updated)`);
+      })
+      .catch(() => toast.error("Could not save items to the product library"));
+
     setOpen(false);
     setPhase("idle");
     setRooms([]);
