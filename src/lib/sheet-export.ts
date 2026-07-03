@@ -21,12 +21,17 @@ export function buildQuoteSheet(data: QuoteData, computed: TotalsResult): XLSX.W
         .filter(Boolean)
         .join("; ");
       const total = (it.price || 0) * (it.unitValue || 1) * (it.quantity || 0);
+      // Include unitValue in the UNIT column ("60 SQFT") so PRICE × QTY × UNIT
+      // visibly reproduces TOTAL for area/length-rated items.
+      const unitLabel = (it.unitValue || 1) !== 1
+        ? `${it.unitValue} ${(it.unitType || "nos").toUpperCase()}`
+        : (it.unitType || "nos").toUpperCase();
       rows.push([
         it.category || "",
         "", // IMAGE placeholder column
         it.description || "",
         spec,
-        it.unitType ? it.unitType.toUpperCase() : "NOS",
+        unitLabel,
         it.price || 0,
         it.quantity || 0,
         total,

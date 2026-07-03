@@ -158,10 +158,10 @@ export function newItem(p?: Partial<QuoteItem>): QuoteItem {
     category: "",
     description: "",
     specification: "",
-    unitValue: 0,
+    unitValue: 1,
     unitType: "nos",
     price: 0,
-    quantity: 0,
+    quantity: 1,
     discountValue: 0,
     discountType: "flat",
     fabric: "",
@@ -174,4 +174,60 @@ export function newItem(p?: Partial<QuoteItem>): QuoteItem {
 
 export function newRoom(name = ""): QuoteRoom {
   return { id: makeId(), name, roomDiscountValue: 0, roomDiscountType: "flat", moodBoard: [], items: [] };
+}
+
+/** localStorage.setItem that survives quota errors (returns false instead of throwing). */
+export function safeSetItem(key: string, value: string): boolean {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let bin = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  return btoa(bin);
+}
+
+function base64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+/** Share payload: UTF-8 safe (Hindi names etc.) base64url, with embedded images
+ *  stripped — a link should carry the quote, not megabytes of photos. */
+export function encodeShareData(data: QuoteData): string {
+  const lean: QuoteData = {
+    ...data,
+    rooms: data.rooms.map((r) => ({
+      ...r,
+      items: r.items.map((it) => (it.imageUrl?.startsWith("data:") ? { ...it, imageUrl: "" } : it)),
+    })),
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(lean));
+  return bytesToBase64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/** Decode a share payload; understands both the UTF-8 format and legacy plain-btoa links. */
+export function decodeShareData(encoded: string): QuoteData | null {
+  const tryParse = (json: string): QuoteData | null => {
+    const parsed = safeParse<QuoteData>(json);
+    return parsed && parsed.version === 2 ? parsed : null;
+  };
+  try {
+    const b64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = tryParse(new TextDecoder().decode(base64ToBytes(b64)));
+    if (decoded) return decoded;
+  } catch {}
+  try {
+    return tryParse(atob(encoded)); // legacy links
+  } catch {
+    return null;
+  }
 }

@@ -6,7 +6,7 @@ import * as XLSX from "xlsx";
 import { toast as sonnerToast } from "sonner";
 
 import { QuoteData, QuoteItem, QuoteRoom, Draft, UnitType, DiscountType, GstMode, TotalsResult } from "@maple/core/lib/types";
-import { money, computeTotals, safeParse, newItem, newRoom, makeId, todayISODate, toNumber } from "@maple/core/lib/utils";
+import { money, computeTotals, safeParse, newItem, newRoom, makeId, todayISODate, toNumber, safeSetItem, encodeShareData, decodeShareData } from "@maple/core/lib/utils";
 import { downloadQuoteSheet } from "@maple/core/lib/sheet-export";
 import { TEMPLATES } from "@maple/core/lib/constants";
 import { MasterProposalPdf } from "./pdf-catalog";
@@ -85,7 +85,7 @@ function LivePreviewPanel({ data, computed, terms }: { data: QuoteData; computed
             <span style={{ opacity: 0.85, fontSize: 9 }}>{room.items.length} items</span>
           </div>
           {room.items.map((item) => {
-            const total = (item.price || 0) * (item.unitValue || 1) * (item.quantity || 1);
+            const total = (item.price || 0) * (item.unitValue || 1) * (item.quantity || 0);
             return (
               <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${hairline}` }}>
                 <div style={{ flex: 1 }}>
@@ -164,54 +164,100 @@ export default function QuotationBuilderPage() {
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
-      if (e.ctrlKey && e.key === "s") { e.preventDefault(); saveDraft(); }
-      if (e.ctrlKey && e.key === "p") { e.preventDefault(); onGeneratePdf(); }
-      if (e.ctrlKey && !e.shiftKey && e.key === "z") { e.preventDefault(); undo(); }
-      if (e.ctrlKey && e.shiftKey && e.key === "z") { e.preventDefault(); redo(); }
+      const mod = e.ctrlKey || e.metaKey; // Cmd on Mac, Ctrl elsewhere
+      if (mod && e.key === "s") { e.preventDefault(); saveDraft(); }
+      if (mod && e.key === "p") { e.preventDefault(); onGeneratePdf(); }
+      if (mod && !e.shiftKey && e.key === "z") { e.preventDefault(); undo(); }
+      if (mod && e.shiftKey && e.key === "z") { e.preventDefault(); redo(); }
     }
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, history, future]);
 
-  useEffect(() => { localStorage.setItem(LS_KEY_LAST, JSON.stringify(data)); }, [data]);
+  // Autosave, debounced: image-heavy quotes make per-keystroke serialization
+  // jank, and localStorage can fill up. When the full quote doesn't fit, retry
+  // without embedded photos so at least the content survives a reload.
+  const quotaWarned = React.useRef(false);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const full = JSON.stringify({ ...data, terms });
+      if (safeSetItem(LS_KEY_LAST, full)) return;
+      const lean = JSON.stringify({
+        ...data,
+        terms,
+        rooms: data.rooms.map((r) => ({ ...r, items: r.items.map((it) => (it.imageUrl?.startsWith("data:") ? { ...it, imageUrl: "" } : it)) })),
+      });
+      const ok = safeSetItem(LS_KEY_LAST, lean);
+      if (!quotaWarned.current) {
+        quotaWarned.current = true;
+        toast(ok ? "Browser storage is full — autosave is keeping the quote but not its photos. Use Save to keep everything." : "Browser storage is full — autosave is off. Use Save to keep this quote.", "error");
+      }
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, terms]);
+
+  // Custom terms are part of the working state; remember them like the quote.
+  useEffect(() => {
+    if (terms.length) safeSetItem(LS_KEY_TERMS, JSON.stringify(terms));
+  }, [terms]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const qParam = params.get("q");
-    if (qParam) {
-      try {
-        const decoded = JSON.parse(atob(qParam));
-        if (decoded.version === 2) { setData(decoded); toast("Shared quote loaded"); return; }
-      } catch {}
-    }
-    const last = safeParse<QuoteData>(localStorage.getItem(LS_KEY_LAST));
-    if (last && last.version === 2) setData(last);
-    else setData((prev) => ({ ...prev, quote: { ...prev.quote, number: `MF/2026/Q-${Math.floor(Math.random() * 1000).toString().padStart(3, "0")}` } }));
     setDrafts(safeParse<Draft[]>(localStorage.getItem(LS_KEY_DRAFTS)) || []);
-    setTerms(safeParse<string[]>(localStorage.getItem(LS_KEY_TERMS)) || [
+    const defaultTerms = safeParse<string[]>(localStorage.getItem(LS_KEY_TERMS)) || [
       "50% Advance at the time of booking.",
       "40% After completion of woodwork structure.",
       "10% Before delivery of items.",
       "GST will be extra as applicable.",
       "Transportation and loading extra if not mentioned.",
-    ]);
+    ];
+
+    const qParam = new URLSearchParams(window.location.search).get("q");
+    const shared = qParam ? decodeShareData(qParam) : null;
+    if (shared) {
+      setData(shared);
+      setTerms(shared.terms?.length ? shared.terms : defaultTerms);
+      toast("Shared quote loaded");
+      return;
+    }
+    if (qParam) toast("This share link is invalid or truncated", "error");
+
+    const last = safeParse<QuoteData>(localStorage.getItem(LS_KEY_LAST));
+    if (last && last.version === 2) {
+      setData(last);
+      setTerms(last.terms?.length ? last.terms : defaultTerms);
+    } else {
+      setData((prev) => ({ ...prev, quote: { ...prev.quote, number: `MF/2026/Q-${Math.floor(Math.random() * 1000).toString().padStart(3, "0")}` } }));
+      setTerms(defaultTerms);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function saveDraft() {
     const name = prompt("Enter draft name:", data.client.name || "Untitled Quote");
     if (!name) return;
-    const updated = [{ id: makeId(), name, savedAt: Date.now(), data }, ...drafts];
+    const updated = [{ id: makeId(), name, savedAt: Date.now(), data: { ...data, terms } }, ...drafts];
+    if (!safeSetItem(LS_KEY_DRAFTS, JSON.stringify(updated))) {
+      toast("Browser storage is full — delete old drafts or use Save instead.", "error");
+      return;
+    }
     setDrafts(updated);
-    localStorage.setItem(LS_KEY_DRAFTS, JSON.stringify(updated));
     toast("Draft saved");
+  }
+  function loadQuote(loaded: QuoteData, source: string) {
+    setData(loaded);
+    if (loaded.terms?.length) setTerms(loaded.terms);
+    toast(`Loaded from ${source}`);
   }
   function deleteDraft(id: string) {
     if (!confirm("Delete this draft?")) return;
     const updated = drafts.filter((d) => d.id !== id);
+    if (!safeSetItem(LS_KEY_DRAFTS, JSON.stringify(updated))) {
+      toast("Could not update drafts (browser storage error)", "error");
+      return;
+    }
     setDrafts(updated);
-    localStorage.setItem(LS_KEY_DRAFTS, JSON.stringify(updated));
     toast("Draft deleted");
   }
   function updateRoom(i: number, patch: Partial<QuoteRoom>) {
@@ -244,10 +290,15 @@ export default function QuotationBuilderPage() {
   }
 
   async function onGeneratePdf() {
+    // Open the tab synchronously, inside the user gesture — opening it after the
+    // awaits below gets popup-blocked in Safari (and sometimes Chrome).
+    const win = window.open("", "_blank");
+    if (win) win.document.write("<title>Preparing proposal…</title><p style='font-family:sans-serif;padding:24px'>Preparing your proposal…</p>");
     toast("Generating PDF…");
-    // react-pdf renders data URLs reliably; convert brand images before handing them over.
+
     const toDataUrl = async (url: string | null | undefined): Promise<string | null> => {
       if (!url) return null;
+      if (url.startsWith("data:")) return url;
       try {
         const r = await fetch(url);
         if (!r.ok) return null;
@@ -260,23 +311,57 @@ export default function QuotationBuilderPage() {
         });
       } catch { return null; }
     };
-    const fetched = await fetch("/api/brand").then((r) => r.json()).catch(() => null);
-    const [logoUrl, bannerUrl] = await Promise.all([toDataUrl(fetched?.logoUrl), toDataUrl(fetched?.bannerUrl)]);
-    const brand = {
-      name: (fetched?.name as string | null) ?? null,
-      logoUrl,
-      bannerUrl,
-      primaryColor: (fetched?.primaryColor as string | null) ?? null,
-      addressLine1: (fetched?.addressLine1 as string | null) ?? null,
-      addressLine2: (fetched?.addressLine2 as string | null) ?? null,
-      phone: (fetched?.phone as string | null) ?? null,
-      email: (fetched?.email as string | null) ?? null,
-      gstin: (fetched?.gstin as string | null) ?? null,
-      website: (fetched?.website as string | null) ?? null,
-      tagline: (fetched?.tagline as string | null) ?? null,
-    };
-    const blob = await pdf(<MasterProposalPdf data={data} computed={computed} terms={terms} brand={brand} />).toBlob();
-    window.open(URL.createObjectURL(blob), "_blank");
+
+    try {
+      const fetched = await fetch("/api/brand").then((r) => r.json()).catch(() => null);
+      const [logoUrl, bannerUrl] = await Promise.all([toDataUrl(fetched?.logoUrl), toDataUrl(fetched?.bannerUrl)]);
+      const brand = {
+        name: (fetched?.name as string | null) ?? null,
+        logoUrl,
+        bannerUrl,
+        primaryColor: (fetched?.primaryColor as string | null) ?? null,
+        addressLine1: (fetched?.addressLine1 as string | null) ?? null,
+        addressLine2: (fetched?.addressLine2 as string | null) ?? null,
+        phone: (fetched?.phone as string | null) ?? null,
+        email: (fetched?.email as string | null) ?? null,
+        gstin: (fetched?.gstin as string | null) ?? null,
+        website: (fetched?.website as string | null) ?? null,
+        tagline: (fetched?.tagline as string | null) ?? null,
+      };
+
+      // Item photos: react-pdf fetches remote URLs itself and dies on CORS.
+      // Convert them up front; a photo that can't be fetched is dropped so the
+      // document still renders.
+      const rooms = await Promise.all(
+        data.rooms.map(async (room) => ({
+          ...room,
+          items: await Promise.all(
+            room.items.map(async (item) => {
+              if (!item.imageUrl || item.imageUrl.startsWith("data:")) return item;
+              const converted = await toDataUrl(item.imageUrl);
+              return { ...item, imageUrl: converted ?? "" };
+            })
+          ),
+        }))
+      );
+
+      const blob = await pdf(<MasterProposalPdf data={{ ...data, rooms }} computed={computed} terms={terms} brand={brand} />).toBlob();
+      const blobUrl = URL.createObjectURL(blob);
+      if (win && !win.closed) {
+        win.location.href = blobUrl;
+      } else {
+        // Popup was blocked or closed — fall back to a download.
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = `${(data.quote.number || "proposal").replace(/[^\w.-]+/g, "-")}.pdf`;
+        a.click();
+        toast("Popup blocked — the PDF was downloaded instead");
+      }
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      if (win && !win.closed) win.close();
+      toast("Could not generate the PDF. Remove any item images added by URL and try again.", "error");
+    }
   }
 
   async function onImportExcel(e: React.ChangeEvent<HTMLInputElement>) {
@@ -336,19 +421,33 @@ export default function QuotationBuilderPage() {
   }
   async function onSave() {
     if (!data.client.name) { toast("Add a client name first", "error"); return; }
-    const res = await fetch("/api/quotations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ number: data.quote.number, total: computed.totals.grandTotal, status: "saved", data, client: { name: data.client.name, phone: data.client.phone, address: data.client.address } }) });
+    const res = await fetch("/api/quotations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ number: data.quote.number, total: computed.totals.grandTotal, status: "saved", data: { ...data, terms }, client: { name: data.client.name, phone: data.client.phone, address: data.client.address } }) });
     if (res.ok) { toast("Saved to system ✓"); loadServerQuotes(); } else { const j = await res.json().catch(() => ({})); toast(j.error || "Save failed", "error"); }
   }
   async function deleteServerQuote(id: string) {
     if (!confirm("Delete this saved quotation?")) return;
-    await fetch(`/api/quotations/${id}`, { method: "DELETE" }); loadServerQuotes();
+    const res = await fetch(`/api/quotations/${id}`, { method: "DELETE" }).catch(() => null);
+    if (!res?.ok) toast("Could not delete this quotation", "error");
+    loadServerQuotes();
   }
   useEffect(() => { if (activeTab === "saved") loadServerQuotes(); }, [activeTab]);
 
-  function shareQuote() {
-    const url = `${window.location.origin}${window.location.pathname}?q=${btoa(JSON.stringify(data))}`;
-    navigator.clipboard.writeText(url);
-    toast("Share link copied");
+  async function shareQuote() {
+    // Encoding is UTF-8 safe (names in any script) and strips embedded photos —
+    // links carry the quote content; photos travel via Save instead.
+    const encoded = encodeShareData({ ...data, terms });
+    const url = `${window.location.origin}${window.location.pathname}?q=${encoded}`;
+    if (url.length > 8000) {
+      toast("This quote is too large for a share link — use Save and let your colleague open it from Saved.", "error");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("Share link copied");
+    } catch {
+      // Clipboard API needs a secure context; fall back to manual copy.
+      prompt("Copy this share link:", url);
+    }
   }
 
   const applyTemplate = (type: 1 | 2 | 3) => {
@@ -491,7 +590,7 @@ export default function QuotationBuilderPage() {
                                 className="h-12 w-full resize-none border-none bg-transparent text-xs leading-relaxed text-muted-foreground focus:outline-none" />
                             </div>
                             <div className="shrink-0 text-right">
-                              <div className="tabular-nums text-base font-bold text-foreground">{money((item.price || 0) * (item.unitValue || 1) * (item.quantity || 1))}</div>
+                              <div className="tabular-nums text-base font-bold text-foreground">{money((item.price || 0) * (item.unitValue || 1) * (item.quantity || 0))}</div>
                               <button onClick={() => deleteItem(ri, ii)} className="mt-1 text-[11px] font-medium text-destructive hover:underline">Remove</button>
                             </div>
                           </div>
@@ -588,7 +687,7 @@ export default function QuotationBuilderPage() {
                           <td className="text-muted-foreground">{new Date(q.createdAt).toLocaleDateString()}</td>
                           <td className="text-right">
                             <div className="flex justify-end gap-3">
-                              <button onClick={() => { setData((q as unknown as { data: QuoteData }).data); setActiveTab("client"); toast("Loaded into builder"); }} className="text-xs font-medium text-primary hover:underline">Load</button>
+                              <button onClick={() => { loadQuote((q as unknown as { data: QuoteData }).data, "Saved"); setActiveTab("client"); }} className="text-xs font-medium text-primary hover:underline">Load</button>
                               <button onClick={() => deleteServerQuote(q.id)} className="text-muted-foreground/50 hover:text-destructive">×</button>
                             </div>
                           </td>
@@ -613,7 +712,7 @@ export default function QuotationBuilderPage() {
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {drafts.map((d) => (
                     <Card key={d.id} className="group relative p-4">
-                      <button onClick={() => { if (confirm("Load draft?")) setData(d.data); }} className="w-full text-left">
+                      <button onClick={() => { if (confirm("Load draft?")) loadQuote(d.data, "draft"); }} className="w-full text-left">
                         <div className="mb-3 flex items-start justify-between">
                           <span className="flex h-9 w-9 items-center justify-center rounded-md bg-muted text-muted-foreground">▦</span>
                           <div className="text-right"><div className="text-sm font-bold text-primary">{money(computeTotals(d.data).totals.grandTotal)}</div><div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{d.data.rooms.length} rooms</div></div>

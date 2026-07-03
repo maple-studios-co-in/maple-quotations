@@ -62,7 +62,10 @@ For the AI suites (R7) you need a catalog PDF; a 3-page slice keeps cost low:
 | 9 | Ctrl+Z / Ctrl+Shift+Z | Undo/redo item edits |
 | 10 | "Templates" → apply one | Rooms replaced after confirm |
 | 11 | Reload the page | Working quote restored from browser storage |
-| 12 | "Share" → open copied link in a private window + sign in | The shared quote loads |
+| 12 | "Share" → open copied link in a private window + sign in | The shared quote loads, including edited T&C; item photos are intentionally not in the link |
+| 13 | "Share" with a client name in Hindi/any script | Link copies and loads correctly (no crash) |
+| 14 | "+ Item" on a room | New item starts at Qty 1 and its row total matches the summary |
+| 15 | Edit Terms & Conditions, reload the page | Custom terms persist (not reset to defaults) |
 
 ## R3 — Persistence: drafts, saved, exports
 
@@ -71,8 +74,9 @@ For the AI suites (R7) you need a catalog PDF; a 3-page slice keeps cost low:
 | 1 | "Save draft" with a name | Appears under Drafts tab; survives reload |
 | 2 | Delete a draft | Removed after confirm |
 | 3 | "Save" (client name set) | Toast; appears under Saved with client name + total |
-| 4 | "Save" again with same quote number | Updates the same row (no duplicate) |
-| 5 | Saved → Load | Quote loads into builder |
+| 4 | "Save" again with same quote number, same client | Updates the same row (no duplicate) |
+| 4b | "Save" the same quote number with a DIFFERENT client name | Clear 409 error naming the other client; nothing overwritten |
+| 5 | Saved → Load | Quote loads into builder, including its saved T&C |
 | 6 | Saved → delete | Row disappears |
 | 7 | "Export sheet" | .xlsx downloads: CATEGORY…TOTAL columns, room header rows, summary block (Subtotal / Packing / Loading / CGST+SGST or GST / TOTAL) matching the on-screen totals |
 
@@ -103,6 +107,8 @@ Set branding + company first (R4), build a quote with 2 rooms and at least one i
 | 5 | Terms + payment | Numbered terms; payment card with UPI/bank fields |
 | 6 | Footer on every page | website · tagline · "Page N of M" |
 | 7 | Remove banner + logo in Settings, regenerate | PDF still renders using text fallbacks (no crash, no blank header) |
+| 7b | Add an item image via LINK to an external site, generate | PDF renders (that image may be dropped); on failure a clear error toast appears |
+| 7c | Generate with the browser's popup blocker on | PDF downloads as a file instead, with a toast |
 | 8 | Live preview panel | Mirrors the same design (red bands, cream cards) |
 
 ## R6 — AI catalog import (needs API key; costs a few ₹ per run)
@@ -158,6 +164,8 @@ Set branding + company first (R4), build a quote with 2 rooms and at least one i
 ---
 
 ## Known limitations (do not file as bugs)
+
+- Share links carry the quote content but not embedded item photos (links stay small); use Save for the full quote.
 
 - PDF amounts use "Rs" not "₹" (built-in PDF font limitation).
 - Item images are embedded data URLs inside the quote JSON; large imports make saved quotes heavy (roadmap: object storage).

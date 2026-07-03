@@ -198,6 +198,12 @@ export function MasterProposalPdf({ data, computed, terms, brand }: { data: Quot
                 const discAmt = discountAmount(gross, item.discountValue, item.discountType);
                 const net = Math.max(0, gross - discAmt);
                 const detail = [item.description, item.specification].filter(Boolean).join(" — ");
+                // Show unitValue when it participates in the price so the
+                // printed arithmetic checks out (e.g. "1 × 60 sqft @ Rs 1,450").
+                const qtyLine =
+                  (item.unitValue || 1) !== 1
+                    ? `${item.quantity} × ${item.unitValue} ${item.unitType} @ ${rs(item.price)}`
+                    : `${item.quantity} ${item.unitType} × ${rs(item.price)}`;
                 return (
                   <View key={item.id} wrap={false} style={styles.itemRow}>
                     {item.imageUrl ? <Image src={item.imageUrl} style={styles.itemThumb} /> : null}
@@ -206,7 +212,7 @@ export function MasterProposalPdf({ data, computed, terms, brand }: { data: Quot
                       {detail ? <Text style={styles.itemDesc}>{detail}</Text> : null}
                     </View>
                     <View style={styles.itemRight}>
-                      <Text style={styles.itemQtyRate}>{item.quantity} {item.unitType} × {rs(item.price)}</Text>
+                      <Text style={styles.itemQtyRate}>{qtyLine}</Text>
                       <Text style={styles.itemTotal}>{rs(net)}</Text>
                     </View>
                   </View>

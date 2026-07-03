@@ -78,6 +78,9 @@ export type QuoteData = {
   };
   payment: CompanyPayment;
   updatedAt: number;
+  /** Terms & conditions travel with the quote so save/load/share keep them.
+   *  Optional: quotes saved before this field existed don't have it. */
+  terms?: string[];
 };
 
 export type Draft = { id: string; name: string; savedAt: number; data: QuoteData };
