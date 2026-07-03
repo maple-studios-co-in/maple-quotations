@@ -102,8 +102,16 @@ the source catalog.
 
 ## 5. Configuration
 
+Admins manage this from **Settings** (header link, admin-only): the Anthropic API key
+(stored encrypted in the database, shown masked) and the parsing model. Values saved
+there override the server environment; the env vars remain as bootstrap fallback:
+
 ```bash
-# .env
+# .env (fallback when nothing is set in Settings)
 ANTHROPIC_API_KEY="sk-ant-..."      # server-side only
-AI_PARSE_MODEL="claude-sonnet-5"    # vision model for catalog parsing
+AI_PARSE_MODEL="claude-fable-5"     # vision model for catalog parsing
 ```
+
+Model guidance: handwritten rates (the scanned catalog) read most reliably on
+**Fable 5** or **Opus 4.8**; **Sonnet 5** is fine for clean text-layer PDFs; Haiku only
+for printed text. Parsing volume is low, so the per-catalog cost difference is small.

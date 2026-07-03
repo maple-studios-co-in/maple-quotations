@@ -33,6 +33,11 @@ export function SuiteShell({
           <span className="text-sm font-semibold capitalize text-muted-foreground">{current.replace("-", " ")}</span>
         </div>
         <div className="flex items-center gap-3 text-sm">
+          {(user.perms.includes("*") || user.role === "admin") && (
+            <a href="/settings" className="rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
+              Settings
+            </a>
+          )}
           <div className="text-right leading-tight">
             <div className="font-medium text-foreground">{user.name}</div>
             <div className="text-[11px] text-muted-foreground">{ROLE_LABEL[user.role] ?? user.role}</div>

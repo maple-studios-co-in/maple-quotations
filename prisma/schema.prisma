@@ -83,3 +83,12 @@ model OutboxEvent {
   status    String   @default("pending") // pending | sent | failed
   createdAt DateTime @default(now())
 }
+
+// Runtime app configuration editable from the Settings page (admin only).
+// Secret values (API keys) are stored AES-256-GCM encrypted with a key derived
+// from AUTH_SECRET; non-secrets are plain text.
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
