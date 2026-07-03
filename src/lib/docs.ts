@@ -9,6 +9,7 @@ export const DOCS: DocMeta[] = [
   { slug: "user-guide", title: "User Guide", file: "USER_GUIDE.md", audience: "user" },
   { slug: "developer", title: "Developer Guide", file: "DEVELOPER.md", audience: "dev" },
   { slug: "testing", title: "Testing", file: "TESTING.md", audience: "dev" },
+  { slug: "auto-generation", title: "Auto-Generation Plan", file: "AUTO_GENERATION.md", audience: "dev" },
   { slug: "roadmap", title: "Roadmap", file: "ROADMAP.md", audience: "dev" },
 ];
 

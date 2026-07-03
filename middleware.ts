@@ -24,7 +24,8 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Exclude /login, /docs (public), and /api/auth so those are reachable without a session.
+// Exclude "/" (public landing; the page itself picks builder vs landing by session),
+// /login, /docs, and /api/auth so those are reachable without a session.
 export const config = {
-  matcher: ["/((?!login|docs|api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|ico|webp|mp4)).*)"],
+  matcher: ["/((?!$|login|docs|api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|ico|webp|mp4)).*)"],
 };
