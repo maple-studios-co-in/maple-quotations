@@ -5,6 +5,13 @@ and its **own login** — no dependency on the suite monorepo or the shared Post
 
 Next.js 16 (App Router) · Prisma · Postgres · React-PDF.
 
+## Docs
+
+- [Developer Guide](docs/DEVELOPER.md) — stack, structure, how the pieces work, common tasks
+- [User Guide](docs/USER_GUIDE.md) — building quotes, PDF export, drafts vs saved, shortcuts
+- [Testing](docs/TESTING.md) — running tests, the testing pyramid, adding coverage
+- [Roadmap](docs/ROADMAP.md) — prioritised enhancements
+
 ## Run it locally
 
 ```bash
