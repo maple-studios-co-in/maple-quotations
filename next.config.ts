@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+
+// Standalone app: no workspace packages to transpile — the shared code is vendored
+// under ./src and resolved via tsconfig "paths".
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["admin.maplefurnishers.com", "leads.maplefurnishers.com", "crm.maplefurnishers.com", "quotations.maplefurnishers.com", "orders.maplefurnishers.com", "challans.maplefurnishers.com", "invoices.maplefurnishers.com", "payments.maplefurnishers.com", "catalog.maplefurnishers.com", "photoshoot.maplefurnishers.com", "inventory.maplefurnishers.com", "purchase-orders.maplefurnishers.com", "finance.maplefurnishers.com", "expenses.maplefurnishers.com", "hr.maplefurnishers.com", "users.maplefurnishers.com"], transpilePackages: ["@maple/core", "@maple/db"] };
+  allowedDevOrigins: ["quotations.maplefurnishers.com"],
+};
+
 export default nextConfig;

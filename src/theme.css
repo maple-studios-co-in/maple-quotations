@@ -1,0 +1,54 @@
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument), Georgia, serif;
+  --radius-lg: 0.7rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.35rem;
+}
+:root {
+  --background: oklch(0.98 0.01 75);
+  --foreground: oklch(0.21 0.02 40);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.02 40);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.02 40);
+  --primary: oklch(0.36 0.11 28);
+  --primary-foreground: oklch(0.98 0.01 75);
+  --secondary: oklch(0.95 0.015 70);
+  --secondary-foreground: oklch(0.28 0.03 40);
+  --muted: oklch(0.95 0.012 70);
+  --muted-foreground: oklch(0.52 0.02 45);
+  --accent: oklch(0.93 0.02 65);
+  --accent-foreground: oklch(0.28 0.03 40);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.98 0.01 75);
+  --success: oklch(0.6 0.13 150);
+  --border: oklch(0.9 0.012 65);
+  --input: oklch(0.9 0.012 65);
+  --ring: oklch(0.36 0.11 28);
+  --sidebar: oklch(0.97 0.012 72);
+}
+* { border-color: var(--border); }
+body { background: var(--background); color: var(--foreground); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+.font-serif { font-family: var(--font-serif); }

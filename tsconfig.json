@@ -1,6 +1,51 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "plugins": [{ "name": "next" }] },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@maple/core/lib/*": [
+        "./src/lib/*"
+      ],
+      "@maple/core/ui/*": [
+        "./src/components/ui/*"
+      ],
+      "@maple/core/components/*": [
+        "./src/components/*"
+      ],
+      "@maple/db": [
+        "./src/db/index.ts"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "allowJs": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

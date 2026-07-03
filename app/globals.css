@@ -1,3 +1,4 @@
 @import "tailwindcss";
-@import "../../../packages/core/src/theme.css";
-@source "../../../packages/core/src/**/*.{ts,tsx}";
+@import "../src/theme.css";
+@source "../app/**/*.{ts,tsx}";
+@source "../src/**/*.{ts,tsx}";

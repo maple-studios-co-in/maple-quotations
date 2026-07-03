@@ -1,0 +1,85 @@
+// Maple Quotations — its OWN database (separate from maple-suite).
+// Only the models this tool needs. Cross-module links use a stable global id
+// (cuid) + a denormalized snapshot, never a live cross-DB join. See ARCHITECTURE.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  domain       String?  @unique
+  brandName    String   @default("Maple Furnishers")
+  logoUrl      String?
+  primaryColor String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  users        User[]
+  clients      Client[]
+  quotations   Quotation[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String?
+  tenant       Tenant?  @relation(fields: [tenantId], references: [id])
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("sales")
+  perms        String[] @default([])
+  createdAt    DateTime @default(now())
+}
+
+// Local client cache. The system of record for clients is the CRM module; here we
+// keep a lightweight copy keyed by the same global id so quotations can resolve and
+// display a client without calling out. Kept in sync via API/events later.
+model Client {
+  id         String      @id @default(cuid())
+  tenantId   String?
+  tenant     Tenant?     @relation(fields: [tenantId], references: [id])
+  name       String
+  company    String?
+  gstin      String?
+  phone      String?
+  email      String?
+  address    String?
+  status     String      @default("active")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  quotations Quotation[]
+}
+
+model Quotation {
+  id             String   @id @default(cuid())
+  tenantId       String?
+  tenant         Tenant?  @relation(fields: [tenantId], references: [id])
+  number         String   @unique
+  clientId       String?
+  client         Client?  @relation(fields: [clientId], references: [id])
+  clientSnapshot Json?    // frozen client copy at quote time (ecosystem seam)
+  data           Json
+  total          Float    @default(0)
+  status         String   @default("draft")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Outbox for future inter-module events (e.g. quotation.accepted -> orders module).
+// No consumer yet; the seam exists so wiring the ecosystem later is cheap.
+model OutboxEvent {
+  id        String   @id @default(cuid())
+  tenantId  String?
+  type      String
+  payload   Json
+  status    String   @default("pending") // pending | sent | failed
+  createdAt DateTime @default(now())
+}
