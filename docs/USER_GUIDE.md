@@ -1,76 +1,105 @@
 # Maple Quotations — User Guide
 
-A tool for building professional furniture quotations — organise items by room, apply
-discounts and GST, preview live, and export a branded PDF.
+Build furniture proposals room by room, import whole catalogs with AI, and send a
+branded PDF or the rate-sheet workbook your team already uses.
 
 ---
 
 ## Signing in
 
-1. Open the app (e.g. **http://localhost:3000** locally, or your hosted URL).
-2. Enter your email and password. The default admin is
-   **admin@maplefurnishers.com / maple@123** (change this after first login).
-3. You land on the quotation builder.
-
-Sign out any time from the **Sign out** button in the top-right.
+Open the app (locally **http://localhost:3000**, or your hosted URL) and sign in.
+The default admin is **admin@maplefurnishers.com / maple@123** — change it after first
+login. Signed-out visitors see the public landing page; **Read the docs** works without
+an account.
 
 ## The screen at a glance
 
-- **Top bar** — the quote number, a "Live editing" indicator, and actions:
-  Undo/Redo, Templates, Share, Save draft, Save, **Generate PDF**.
+- **Top bar** — quote number, Undo/Redo, Templates, Share, Save draft, Save,
+  **Export sheet**, **Generate PDF**.
 - **Tabs** — Overview · Rooms & Items · Finance & T&C · Settlement · Drafts · Saved.
-- **Right panel** — a live financial summary and a live PDF preview (click it to export).
+- **Right panel** — live financial summary and a live proposal preview.
+- **Header** — your company logo, Settings (admins), Sign out.
 
 ## Building a quote
 
 ### 1. Overview
-Enter the **client** (name, phone, project/delivery address) and the **proposal** details
-(quote number, date, validity, sales executive, site name). The quote number is generated
-automatically but you can edit it.
+Client details (name, phone, project address) and proposal configuration (quote number,
+date, validity, sales executive, site name).
 
 ### 2. Rooms & Items
-Quotes are organised by room (e.g. Living Room, Master Bedroom).
+Quotes are organised by room. **+ Create room**, rename inline, then fill it:
 
-- **+ Create room** to add a room; rename it inline; the circled number is its order.
-- **+ Item** adds a line; or use **Quick add template…** for common pieces (wardrobe,
-  kitchen, sofa, etc.).
-- For each item set: category, description, material, fabric, **unit rate**, **unit**
-  (NOS/SET/SQFT/RFT), **unit value**, and **quantity**. The line total updates live.
-- **Item image** — hover the thumbnail to upload a file or paste an image URL.
-- **Room discount** — a flat ₹ or % discount applied to that room; the room's net shows
-  at the bottom.
+- **+ Item** — blank line: category, description, material, fabric, unit rate, unit
+  (NOS/SET/SQFT/RFT), unit value, quantity. Totals update live.
+- **Quick add template…** — common pieces (wardrobe, kitchen, sofa…).
+- **+ Library** — pick from your **product library**: everything you've imported or
+  saved before, each with a product code (like `MF-P-0042`), its last rate,
+  specification, and photo. Search by name, code, or category, tick several, and
+  add them to the room in one go.
+- **Import Excel** — reads an .xlsx rate sheet, including embedded images.
+- **Import catalog (AI)** — see the next section.
 
-**Import from Excel** — the "Import Excel" button reads an `.xlsx`: it maps columns like
-Category, Description, Price, Quantity, Unit, Material, and pulls in embedded images. It
-also picks up client/site fields if present (Client Name, Phone, Address, Site, Quote No).
+**Item photos** — hover the image square on any item:
+- **FILE** — upload from your computer
+- **LINK** — paste an image URL
+- **GALLERY** — pick from the shared image gallery (all previously saved product
+  photos). You can also upload into and delete from the gallery there.
 
-### 3. Finance & T&C
-- **Global discount** — flat ₹ or % off the whole quote.
-- **GST** — set the rate and whether it's **Extra** (added on top) or **Inclusive**
-  (already in the prices). Tick **Split GST into CGST + SGST** for intra-state billing.
-- **Packing & handling (%)** and **Logistics / loading (₹)**.
-- **Terms & conditions** — edit, add, or remove terms; sensible defaults are pre-filled.
+**Room discount** — flat ₹ or % per room, applied after item discounts.
 
-### 4. Settlement
-Your UPI ID and bank details (bank, account holder, account number, IFSC) that appear on
-the proposal.
+### 3. Import catalog (AI)
+
+Turns a whole project catalog PDF into quote rooms in minutes.
+
+1. Click **Import catalog (AI)** and upload the **rates catalog** — the scanned pages
+   with handwritten rates are fine; the AI understands "85K", "18K per pc",
+   crossed-out corrections, and "Pending".
+2. Optionally add the **clean client PDF** (the original without handwriting) — item
+   photos are then cropped from the clean pages instead of the scan, so they look
+   much better on the proposal.
+3. Click **Parse catalog**. Large catalogs take a few minutes; keep the tab open.
+4. **Review screen** — every item shows its photo, dimensions, an editable rate and
+   quantity. Rows highlighted amber need your attention: the rate was missing,
+   marked "Pending", or the handwriting was ambiguous. Fix or remove them —
+   **nothing enters the quote unreviewed**.
+5. **Add to quote** — the rooms land in your quotation, and every item is also saved
+   to the **product library** automatically (with its photo), so the next quote can
+   pull it from **+ Library** instead of re-importing.
+
+### 4. Finance & T&C
+Global discount (₹/%), GST rate with **Extra** or **Inclusive** mode, optional
+**CGST + SGST split** for intra-state billing, packing %, loading ₹, and the editable
+terms list.
+
+### 5. Settlement
+UPI ID and bank details that print on the proposal.
 
 ## Saving your work
 
-- **Save draft** — stores the quote **in this browser** (local only, private to you).
-  Find them under the **Drafts** tab.
-- **Save** — stores the quote **in the system database**, linked to the client. Find these
-  under the **Saved** tab; they persist across devices and are visible to the team. From
-  Saved you can **Load** a quote back into the builder or delete it.
-- **Share** — copies a link that encodes the whole quote; opening it loads the quote for the
-  recipient (no login needed to view via the link).
-- Autosave: your latest working quote is remembered in the browser and restored next visit.
+- **Autosave** — your working quote is kept in the browser and restored next visit.
+- **Save draft** — named snapshots, local to your browser (Drafts tab).
+- **Save** — stores the quote in the system, linked to the client (Saved tab; visible
+  to the team, survives any device). Load or delete from there.
+- **Share** — copies a link that opens this exact quote for a signed-in colleague.
 
-## Exporting the PDF
+## Sending it
 
-Click **Generate PDF** (or the preview panel, or press **Ctrl/⌘ + P**). A branded proposal
-opens in a new tab with the company header/logo, per-room item tables, the full financial
-breakdown, and your terms — ready to print or send.
+- **Generate PDF** — a branded proposal: your banner and logo on the first page, the
+  company block (address, phone, email, GSTIN, website), rooms with item photos, the
+  full financial breakdown, terms, payment details, and your tagline in the footer.
+- **Export sheet** — an .xlsx in the team's rate-sheet format: items grouped under
+  room headers with the Subtotal / Packing / Loading / GST / TOTAL block at the end.
+
+## Settings (admins)
+
+The **Settings** link in the header:
+
+- **Branding & company** — upload your **logo** and **PDF banner**, set the brand
+  color, and fill the company details (name, address, phone, email, GSTIN, website,
+  tagline). These drive the app header, the proposal PDF, and the previews.
+- **AI configuration** — the Anthropic API key (stored encrypted, always shown
+  masked) and the parsing model. Handwritten rates read best on the most capable
+  models; Sonnet is fine for clean text PDFs.
 
 ## Keyboard shortcuts
 
@@ -83,9 +112,10 @@ breakdown, and your terms — ready to print or send.
 
 ## Tips
 
-- The **right-hand summary** always reflects the current numbers — use it to sanity-check
-  discounts and GST before exporting.
-- **Drafts vs Saved**: drafts are local and disposable; use **Save** for anything the team
-  needs or that must survive a browser clear.
-- Set a real client **name** before saving to the system — quotations are linked to clients
-  by name, so it's required for a system save.
+- Give the AI import the clean client PDF too whenever you have it — the proposal
+  photos come out far sharper.
+- Amber rows in the AI review are the ones that cost money if wrong. Check them
+  against the paper before adding.
+- The product library remembers the **latest** rate for a repeated item — re-importing
+  a catalog updates rates rather than duplicating products.
+- PDF amounts print as "Rs" (the PDF fonts have no ₹ glyph); the app itself shows ₹.

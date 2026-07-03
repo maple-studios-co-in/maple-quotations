@@ -1,5 +1,8 @@
 # Maple Quotations — Testing
 
+> Manual end-to-end pass: see the [Regression Plan](./REGRESSION.md) — run it before
+> releases or after touching shared code.
+
 ## Running tests
 
 ```bash
