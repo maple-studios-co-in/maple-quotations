@@ -425,7 +425,7 @@ export default function QuotationBuilderPage() {
   }
 
   async function loadServerQuotes() {
-    try { const r = await fetch("/api/quotations"); if (r.ok) setServerQuotes(await r.json()); } catch {}
+    try { const r = await fetch("/api/quotations"); if (r.ok) setServerQuotes(await r.json()); } catch { }
   }
   async function onSave() {
     if (!data.client.name) { toast("Add a client name first", "error"); return; }
@@ -517,7 +517,7 @@ export default function QuotationBuilderPage() {
       </div>
 
       {/* Body */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[1fr_360px]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px]">
         <div className="overflow-y-auto p-6">
           {activeTab === "client" && (
             <div className="mx-auto max-w-3xl space-y-5">
@@ -743,7 +743,7 @@ export default function QuotationBuilderPage() {
         </div>
 
         {/* Right summary panel */}
-        <aside className="hidden min-h-0 flex-col overflow-y-auto border-l border-border bg-muted/20 xl:flex">
+        <aside className="hidden min-h-0 flex-col overflow-y-auto border-l border-border bg-muted/20 md:flex">
           <div className="space-y-5 p-5">
             <Card className="overflow-hidden p-0">
               <div className="border-b border-border bg-muted/40 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Financial summary</div>
